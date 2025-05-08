@@ -2,12 +2,14 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import { User } from '../models/auth.model';
-import CONFIG from '../config/config';
-import { asyncHandler } from '../middleware/ErrorHandlar';
+import { asyncHandler } from '../middleware/errorHandler';
 import { EMAIL_REGEX, PASSWORD_REGEX } from '../utils/validator';
 import { sendResponse } from '../utils/response';
 import { generateAccessToken, generateRefreshToken } from "../utils/token";
 import crypto from 'crypto';
+import { authenticator } from 'otplib';
+import QRCode from 'qrcode';
+import { AuthRequest } from '../middleware/authMiddleware';
 
 //  url: /api/v1/auth/signup
 export const register = asyncHandler(async (req: Request, res: Response) => {
@@ -80,7 +82,7 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
 //  url: /api/v1/auth/logout
 export const logout = asyncHandler(async (req: Request, res: Response) => {
   const { refreshToken } = req.body;
-  console.log(refreshToken);
+ 
 
   const user = await User.findOne({ refreshToken });
   console.log(user);
@@ -153,3 +155,92 @@ export const resetPassword = asyncHandler(async (req: Request, res: Response) =>
 });
 
 
+
+// Helper to hash backup codes
+const hashBackupCodes = async (codes: string[]) => {
+  const hashed = await Promise.all(
+    codes.map(async (code) => await bcrypt.hash(code, 12))
+  );
+  return hashed;
+};
+
+// url: /api/v1/auth/2fa/setup
+export const setup2FA = asyncHandler(async (req: AuthRequest, res: Response) => {
+
+
+  const userId = req.user?.userId;
+  const user = await User.findById(userId);
+  if (!user) return sendResponse(res, 404, false, 'User not found');
+
+  const secret = authenticator.generateSecret();
+  const otpauth = authenticator.keyuri(user.email, 'MyApp', secret);
+  const qrCode = await QRCode.toDataURL(otpauth);
+
+  user.twoFactorSecret = secret;
+  await user.save();
+
+  return sendResponse(res, 200, true, '2FA QR code generated', { qrCode });
+});
+
+// url: /api/v1/auth/2fa/verify
+// export const verify2FA = asyncHandler(async (req: Request, res: Response) => {
+//   const userId = req.user?.userId;
+//   const { token } = req.body;
+//   const user = await User.findById(userId);
+//   if (!user || !user.twoFactorSecret) return sendResponse(res, 404, false, '2FA not setup');
+
+//   const isValid = authenticator.check(token, user.twoFactorSecret);
+//   if (!isValid) return sendResponse(res, 400, false, 'Invalid 2FA token');
+
+//   user.twoFactorEnabled = true;
+
+//   const backupCodes = Array.from({ length: 5 }, () => crypto.randomBytes(4).toString('hex'));
+//   user.backupCodes = await hashBackupCodes(backupCodes);
+
+//   await user.save();
+
+//   return sendResponse(res, 200, true, '2FA enabled successfully', { backupCodes });
+// });
+
+// // url: /api/v1/auth/2fa/disable
+// export const disable2FA = asyncHandler(async (req: Request, res: Response) => {
+//   const userId = req.user?.userId;
+//   const { token } = req.body;
+//   const user = await User.findById(userId);
+//   if (!user || !user.twoFactorSecret) return sendResponse(res, 404, false, '2FA not setup');
+
+//   const isValid = authenticator.check(token, user.twoFactorSecret);
+//   if (!isValid) return sendResponse(res, 400, false, 'Invalid 2FA token');
+
+//   user.twoFactorSecret = undefined;
+//   user.twoFactorEnabled = false;
+//   user.backupCodes = [];
+
+//   await user.save();
+//   return sendResponse(res, 200, true, '2FA disabled successfully');
+// });
+
+// // url: /api/v1/auth/2fa/reset
+// export const reset2FA = asyncHandler(async (req: Request, res: Response) => {
+//   const userId = req.user?.userId;
+//   const { backupCode } = req.body;
+
+//   const user = await User.findById(userId);
+//   if (!user || !user.backupCodes || user.backupCodes.length === 0) {
+//     return sendResponse(res, 403, false, 'No backup codes found');
+//   }
+
+//   const matched = await Promise.any(
+//     user.backupCodes.map(async (stored) => bcrypt.compare(backupCode, stored))
+//   ).catch(() => false);
+
+//   if (!matched) return sendResponse(res, 400, false, 'Invalid backup code');
+
+//   // Invalidate all previous backup codes
+//   user.twoFactorSecret = undefined;
+//   user.twoFactorEnabled = false;
+//   user.backupCodes = [];
+//   await user.save();
+
+//   return sendResponse(res, 200, true, '2FA has been reset. Please set it up again.');
+// });

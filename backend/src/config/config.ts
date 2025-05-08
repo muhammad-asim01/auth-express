@@ -21,3 +21,7 @@ const CONFIG: IConfig = {
 };
 
 export default CONFIG;
+
+export const ALLOWED_ORIGINS = [
+    'http://localhost:3000',
+]

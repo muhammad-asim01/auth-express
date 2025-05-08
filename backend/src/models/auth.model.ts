@@ -8,6 +8,9 @@ export interface IUser extends Document {
     refreshToken?: string;
     resetPasswordToken?: string;
     resetPasswordExpires?: Date;
+    twoFactorEnabled: boolean;
+    twoFactorSecret?: string;
+    backupCodes: string[];
 }
 
 const UserSchema: Schema<IUser> = new Schema<IUser>(
@@ -25,17 +28,17 @@ const UserSchema: Schema<IUser> = new Schema<IUser>(
             required: true,
             unique: true,
             trim: true,
-            minlength: 3, 
-            maxlength: 50, 
+            minlength: 3,
+            maxlength: 50,
         },
         hashedPassword: {
             type: String,
             required: true,
-            minlength: 8, 
+            minlength: 8,
         },
         accessToken: {
             type: String,
-            default: null, 
+            default: null,
         },
         refreshToken: {
             type: String,
@@ -48,12 +51,23 @@ const UserSchema: Schema<IUser> = new Schema<IUser>(
         resetPasswordExpires: {
             type: Date,
         },
+        twoFactorEnabled: {
+            type: Boolean,
+            default: false,
+        },
+        twoFactorSecret: {
+            type: String,
+            default: null,
+        },
+        backupCodes: {
+            type: [String],
+            default: [],
+        },
     },
     {
-        timestamps: true, 
+        timestamps: true,
     }
 );
-
 
 UserSchema.pre<IUser>('save', async function (next) {
     if (this.isModified('hashedPassword') || this.isNew) {
