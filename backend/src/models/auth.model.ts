@@ -5,7 +5,7 @@ export interface IUser extends Document {
     username: string;
     hashedPassword: string;
     accessToken?: string;
-    refreshToken?: string;
+    refreshToken?: string | null;
     resetPasswordToken?: string;
     resetPasswordExpires?: Date;
     twoFactorEnabled: boolean;

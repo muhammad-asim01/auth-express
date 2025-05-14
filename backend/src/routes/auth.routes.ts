@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { forgetPassword, login, logout, resetPassword, setup2FA } from '../controller/auth.controller';
+import { forgetPassword, login, logout, refreshToken, resetPassword, setup2FA } from '../controller/auth.controller';
 import { register } from '../controller/auth.controller';
 import { authenticateToken } from '../middleware/authMiddleware';
 
@@ -11,8 +11,11 @@ authRouter.post('/signup', register);
 //  url: /api/v1/auth/signin
 authRouter.post('/signin', login);
 
+//  url: /api/v1/auth/refresh-token
+authRouter.post('/refresh-token', refreshToken);
+
 //  url: /api/v1/auth/logout
-authRouter.post('/logout', logout);
+authRouter.post('/logout', authenticateToken,logout);
 
 //  url: /api/v1/auth/forget-password
 authRouter.post('/forget-password', forgetPassword);

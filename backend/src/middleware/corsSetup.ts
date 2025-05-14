@@ -12,6 +12,7 @@ const corsOptions: CorsOptions = {
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
 };
 
 export default function applyCors(app: any) {

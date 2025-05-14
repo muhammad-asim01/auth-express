@@ -13,3 +13,13 @@ export const signIn = async (data: any) => {
     return response;
 }
 
+export const logOut = async () => {
+    const response = await apiClient.post(URLS.AUTH.LOGOUT);
+    return response;
+}
+
+export const generateQrCode = async () => {
+    const response = await apiClient.get(URLS.AUTH.SETUP_2FA);
+    return response;
+}
+

@@ -63,8 +63,6 @@ export function SignupComponent() {
             <span className="block absolute bg-transparent border-[3px] border-black/30 size-5 top-0 right-0 border-b-0 border-l-0"></span>
             <span className="block absolute bg-transparent border-[3px] border-black/30 size-5 bottom-0 left-0 border-t-0 border-r-0"></span>
             <span className="block  absolute bg-transparent border-[3px] border-black/30 size-5 bottom-0 right-0 border-t-0 border-l-0"></span>
-
-
             <Card className="rounded-none ring-0 border-2 border-gray-200">
                 <CardHeader>
                     <h2 className="text-2xl font-bold">Sign Up</h2>
@@ -128,7 +126,6 @@ export function SignupComponent() {
                     </Form>
                 </CardContent>
             </Card>
-
         </div>
     )
 }

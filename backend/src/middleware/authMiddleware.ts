@@ -23,5 +23,6 @@ export const authenticateToken: RequestHandler = (req, res, next) => {
   } catch (err) {
     sendResponse(res, 403, false, 'Invalid or expired token.');
     return;
+    
   }
 };

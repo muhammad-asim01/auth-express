@@ -21,7 +21,7 @@ import { Card, CardContent, CardHeader } from "../ui/card"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 
-export const SignupFormSchema = z.object({
+export const SignInFormSchema = z.object({
 
     email: z.string().email({
         message: "Please enter a valid email address.",
@@ -34,30 +34,31 @@ export const SignupFormSchema = z.object({
 export function SignInComponent() {
     const router = useRouter()
 
-    const form = useForm<z.infer<typeof SignupFormSchema>>({
-        resolver: zodResolver(SignupFormSchema),
+    const form = useForm<z.infer<typeof SignInFormSchema>>({
+        resolver: zodResolver(SignInFormSchema),
         defaultValues: {
-
             email: "",
             password: "",
         },
     })
 
-    async function onSubmit(data: z.infer<typeof SignupFormSchema>) {
+    async function onSubmit(data: z.infer<typeof SignInFormSchema>) {
         const response = await signIn(data);
-        console.log(response)
+        console.log(response);
         if (response.success) {
             toast.success(response.message, {
                 description: response.message,
             })
-            router.push('/')
-
-        }
-        if (response.error) {
-            toast.success(response.error, {
-                description: "The User are unautherized",
+            router.push('/')    
+        
+            localStorage.setItem('accessToken', response.data.accessToken)  
+        } if (response.error) {
+            toast.error(response.message, {
+                description: response.message,
             })
         }
+        
+        
     }
 
     return (

@@ -5,7 +5,7 @@ import { User } from '../models/auth.model';
 import { asyncHandler } from '../middleware/errorHandler';
 import { EMAIL_REGEX, PASSWORD_REGEX } from '../utils/validator';
 import { sendResponse } from '../utils/response';
-import { generateAccessToken, generateRefreshToken } from "../utils/token";
+import { generateAccessToken, generateRefreshToken, verifyToken } from "../utils/token";
 import crypto from 'crypto';
 import { authenticator } from 'otplib';
 import QRCode from 'qrcode';
@@ -79,23 +79,44 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
 });
 
 
-//  url: /api/v1/auth/logout
-export const logout = asyncHandler(async (req: Request, res: Response) => {
-  const { refreshToken } = req.body;
- 
+export const logout = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const userId = req.user?.userId;
+  if (!userId) return sendResponse(res, 401, false, 'Unauthorized');
+  const user = await User.findById(userId);
+  if (!user) return sendResponse(res, 404, false, 'User not found');
 
-  const user = await User.findOne({ refreshToken });
-  console.log(user);
-  if (!user) {
-    return sendResponse(res, 401, false, 'Invalid refresh token');
-  }
 
-  user.refreshToken = null as any;
+  user.refreshToken = null;
   await user.save();
 
-  res.clearCookie('refreshToken');
-  return sendResponse(res, 200, true, 'Logout successful');
+  res.clearCookie("refreshToken", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+  });
+
+  return sendResponse(res, 200, true, "Logout successful");
 });
+
+// refrehed token 
+export const refreshToken = asyncHandler(async (req: Request, res: Response) => {
+  const refreshToken = req.cookies.refreshToken;
+  if (!refreshToken) return sendResponse(res, 401, false, 'No refresh token provided');
+
+  const user = await User.findOne({ refreshToken });
+  if (!user) return sendResponse(res, 403, false, 'Invalid refresh token');
+
+  try {
+    const decoded: { userId: string; email: string } | any = verifyToken(refreshToken);
+    const payload = { userId: decoded.userId, email: decoded.email }
+    const newAccessToken = generateAccessToken(payload);
+
+    return sendResponse(res, 200, true, 'Access token refreshed', { accessToken: newAccessToken });
+  } catch (err) {
+    return sendResponse(res, 403, false, 'Invalid or expired refresh token');
+  }
+});
+
 
 // url: /api/v1/auth/forget-password
 
@@ -166,8 +187,6 @@ const hashBackupCodes = async (codes: string[]) => {
 
 // url: /api/v1/auth/2fa/setup
 export const setup2FA = asyncHandler(async (req: AuthRequest, res: Response) => {
-
-
   const userId = req.user?.userId;
   const user = await User.findById(userId);
   if (!user) return sendResponse(res, 404, false, 'User not found');
@@ -179,7 +198,7 @@ export const setup2FA = asyncHandler(async (req: AuthRequest, res: Response) => 
   user.twoFactorSecret = secret;
   await user.save();
 
-  return sendResponse(res, 200, true, '2FA QR code generated', { qrCode });
+  return sendResponse(res, 200, true, '2FA QR code generated', { qrCodeUrl: qrCode });
 });
 
 // url: /api/v1/auth/2fa/verify

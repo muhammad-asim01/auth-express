@@ -6,11 +6,11 @@ export const generateAccessToken = (payload: object) => {
 };
 
 export const generateRefreshToken = (payload: object) => {
-    return jwt.sign(payload, CONFIG.JWT_REFRESH_SECRET, { expiresIn: '7d' });
+    return jwt.sign(payload, CONFIG.JWT_SECRET, { expiresIn: '7d' });
 };
 
 export const verifyToken = (token: string) => {
-    return jwt.verify(token, CONFIG.JWT_REFRESH_SECRET);
+    return jwt.verify(token, CONFIG.JWT_SECRET);
 };
 
 export const decodeToken = (token: string) => {

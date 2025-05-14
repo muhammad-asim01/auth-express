@@ -1,37 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-// Paths you want to exclude from the middleware (login and sign-in)
-const excludedPaths = ['/sign-in', '/sign-up']
+// Define which routes are public (accessible without login)
+const publicPaths = ['/sign-in', '/sign-up']
 
-export function middleware(request: NextRequest) {
-  const token = request.cookies.get('accessToken')?.value
+export default function middleware(request: NextRequest) {
+  const token = request.cookies.get('refreshToken')?.value
   const pathname = request.nextUrl.pathname
 
-  console.log('[Middleware] pathname:', pathname)
-  console.log('[Middleware] accessToken:', token)
-
-   if (pathname.endsWith('.css') || pathname.startsWith('/_next/')) {
+  // Skip static and internal assets
+  if (
+    pathname.startsWith('/_next') ||
+    pathname.endsWith('.css') ||
+    pathname.endsWith('.js') ||
+    pathname.endsWith('.png') ||
+    pathname.endsWith('.ico') ||
+    pathname.endsWith('.svg') ||
+    pathname.startsWith('/api')
+  ) {
     return NextResponse.next()
   }
 
-  // Check if the current path is excluded (login or sign-in)
-  if (excludedPaths.includes(pathname)) {
-    return NextResponse.next()
+  const isPublic = publicPaths.includes(pathname)
+  const isLoggedIn = Boolean(token)
+
+  // If logged in and trying to access public route (like sign-in), redirect to homepage
+  if (isLoggedIn && isPublic) {
+    return NextResponse.redirect(new URL('/', request.url))
   }
 
-  // If protected route and no token, redirect to login
-  if (!token) {
-    const loginUrl = new URL('/sign-in', request.url)
-    return NextResponse.redirect(loginUrl)
+  // If not logged in and trying to access a protected route (including home page)
+  if (!isLoggedIn && !isPublic) {
+    return NextResponse.redirect(new URL('/sign-in', request.url))
   }
 
   return NextResponse.next()
 }
 
-// Apply middleware to all routes, except the ones in excludedPaths
 export const config = {
-  matcher: ['/((?!sign-in|login).*)'], // Apply to all except /sign-in and /login
+  matcher: [
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+  ],
 }
-
-
-
