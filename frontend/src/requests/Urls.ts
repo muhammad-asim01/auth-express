@@ -5,7 +5,7 @@ export const API_BACKEND_BASE_URL = ENVIROMENT.API_BACKEND_BASE_URL;
 export const URLS = {
     AUTH: {
         SIGNUP: `/api/v1/auth/signup`,
-        LOGIN: `/api/v1/auth/login`,
+        SIGNIN: `/api/v1/auth/signin`,
         LOGOUT: `/api/v1/auth/logout`,
         VERIFY_EMAIL: `/api/v1/auth/verify-email`,
         FORGOT_PASSWORD: `/api/v1/auth/forgot-password`,

@@ -57,7 +57,7 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
 
   // check if user is already logged in
   if (user.refreshToken) {
-    return sendResponse(res, 401, false, 'User already logged in');
+    return sendResponse(res, 201, true, 'User already logged in');
   }
 
   const payload = { userId: user._id, email: user.email };

@@ -8,3 +8,8 @@ export const signup = async (data: any) => {
     return response;
 }
 
+export const signIn = async (data: any) => {
+    const response = await apiClient.post(URLS.AUTH.SIGNIN, data);
+    return response;
+}
+
