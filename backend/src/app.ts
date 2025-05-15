@@ -4,6 +4,7 @@ import { requestLogger } from './middleware/requestLogger';
 import authRouter from './routes/auth.routes';
 import { errorHandler } from './middleware/errorHandler';
 import { connectDB } from './models/dbConnect';
+import cookieParser from 'cookie-parser';
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -17,6 +18,9 @@ app.use(express.urlencoded({ extended: true }));
 
 // 4) Logging
 app.use(requestLogger);
+
+// 5) Cookies Parser
+app.use(cookieParser())
 
 // 5) Your routes
 app.use('/api/v1/auth', authRouter);

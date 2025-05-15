@@ -12,7 +12,7 @@ authRouter.post('/signup', register);
 authRouter.post('/signin', login);
 
 //  url: /api/v1/auth/refresh-token
-authRouter.post('/refresh-token', refreshToken);
+authRouter.get('/refresh-token', refreshToken);
 
 //  url: /api/v1/auth/logout
 authRouter.post('/logout', authenticateToken,logout);
