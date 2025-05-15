@@ -10,6 +10,7 @@ import crypto from 'crypto';
 import { authenticator } from 'otplib';
 import QRCode from 'qrcode';
 import { AuthRequest } from '../middleware/authMiddleware';
+import { clearCookies, setCookies } from '../utils/secureCookie';
 
 //  url: /api/v1/auth/signup
 export const register = asyncHandler(async (req: Request, res: Response) => {
@@ -41,7 +42,7 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
   });
 });
 
-//  url: /api/v1/auth/signin
+// url: /api/v1/auth/signin
 export const login = asyncHandler(async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
@@ -55,25 +56,30 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
     return sendResponse(res, 401, false, 'Invalid credentials');
   }
 
-  // check if user is already logged in
-  if (user.refreshToken) {
-    return sendResponse(res, 201, true, 'User already logged in');
+  // Check if user has a refreshToken, and it's still valid
+  if (user.accessToken) {
+    try {
+      verifyToken(user.accessToken); // Throws if expired/invalid
+      return sendResponse(res, 201, true, 'User already logged in');
+    } catch (err) {
+      // Token invalid or expired — remove it
+      user.refreshToken = null;
+      user.accessToken = null;
+      await user.save();
+    }
   }
 
+  // Generate new tokens
   const payload = { userId: user._id, email: user.email };
   const accessToken = generateAccessToken(payload);
   const refreshToken = generateRefreshToken(payload);
 
+  // Store new refreshToken in DB
   user.refreshToken = refreshToken;
+  user.accessToken = accessToken;
   await user.save();
 
-  // You can optionally set the refresh token as a secure, HTTP-only cookie:
-  res.cookie('refreshToken', refreshToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-  });
+  setCookies(res, refreshToken);
 
   return sendResponse(res, 200, true, 'Login successful', { accessToken });
 });
@@ -87,13 +93,10 @@ export const logout = asyncHandler(async (req: AuthRequest, res: Response) => {
 
 
   user.refreshToken = null;
+
   await user.save();
 
-  res.clearCookie("refreshToken", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-  });
+  clearCookies(res);
 
   return sendResponse(res, 200, true, "Logout successful");
 });

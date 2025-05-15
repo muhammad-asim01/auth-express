@@ -1,4 +1,3 @@
-// src/utils/axiosClient.ts
 import { API_BACKEND_BASE_URL, URLS } from "@/requests/Urls";
 import axios, {
     AxiosInstance,
@@ -18,6 +17,7 @@ export class ApiClient {
     private client: AxiosInstance;
     private isRefreshing = false;
     private refreshSubscribers: ((token: string) => void)[] = [];
+    
 
     constructor(baseURL: string, config?: AxiosRequestConfig) {
         this.client = axios.create({
@@ -37,23 +37,34 @@ export class ApiClient {
                     if (token && config.headers) {
                         config.headers.Authorization = `Bearer ${token}`;
                     }
+                } else {
+                    // Remove any existing Authorization header if not required
+                    if (config.headers?.Authorization) {
+                        delete config.headers.Authorization;
+                    }
                 }
-
                 return config;
             },
             (error) => Promise.reject(error)
         );
 
+
         this.client.interceptors.response.use(
             (response) => response,
             async (error) => {
                 const originalRequest = error.config as ExtendedRequestConfig;
+                const status = error.response?.status;
+                const message = error.response?.data?.message;
+                console.log("Error response:", error.response);
+                console.log("Error message:", message);
 
-                if (
-                    error.response?.status === 401 &&
+                const isTokenExpired =
+                    (status === 401 || status === 403) &&
+                    message === "Token expired" &&
                     (originalRequest.requiresAuth ?? true) &&
-                    !originalRequest._retry
-                ) {
+                    !originalRequest._retry;
+
+                if (isTokenExpired) {
                     originalRequest._retry = true;
 
                     if (this.isRefreshing) {
@@ -71,13 +82,21 @@ export class ApiClient {
                     this.isRefreshing = true;
 
                     try {
-                        const refreshResponse = await this.client.post<{ accessToken: string }>(
-                           URLS.AUTH.REFRESH_TOKEN,
-                            {},
-                            { requiresAuth: false }
+                        // 👇 NOTE: requiresAuth: false ensures no Authorization header is sent
+                        const refreshResponse = await this.client.get<{ accessToken: string }>(
+                            URLS.AUTH.REFRESH_TOKEN,
+                            {
+                                requiresAuth: false,
+                            } as ExtendedRequestConfig
                         );
 
-                        const newAccessToken = refreshResponse.data.accessToken;
+                        console.log("Refresh response:", refreshResponse);
+                        if (refreshResponse.status !== 200) {
+                            console.log('')
+                            return
+                        }
+
+                        const newAccessToken = refreshResponse?.data?.data?.accessToken as any;
                         localStorage.setItem("accessToken", newAccessToken);
 
                         this.refreshSubscribers.forEach((cb) => cb(newAccessToken));
@@ -91,11 +110,16 @@ export class ApiClient {
                         return this.client(originalRequest);
                     } catch (refreshError) {
                         localStorage.removeItem("accessToken");
+
+                        // OPTIONAL: redirect to login
+                        window.location.href = "/login";
+
                         return Promise.reject(refreshError);
                     } finally {
                         this.isRefreshing = false;
                     }
                 }
+
 
                 return Promise.reject(error);
             }
