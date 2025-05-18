@@ -20,11 +20,16 @@ import { signup } from "@/requests/api/auth.req"
 import { Card, CardContent, CardHeader } from "../ui/card"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { BodyText } from "../base/typography/BodyText"
+import { Separator } from "../ui/separator"
+import { TitleText } from "../base/typography/TitleText"
+import Image from "next/image"
+import { Checkbox } from "../ui/checkbox"
 
 
 export const SignupFormSchema = z.object({
-    username: z.string().min(2, {
-        message: "Username must be at least 2 characters.",
+    fullname: z.string().min(2, {
+        message: "Fullname must be at least 2 characters.",
     }),
     email: z.string().email({
         message: "Please enter a valid email address.",
@@ -32,6 +37,9 @@ export const SignupFormSchema = z.object({
     password: z.string().min(8, {
         message: "Password must be at least 8 characters.",
     }),
+    confirmPassword: z.string().min(8, {
+        message: "Password must be at least 8 characters.",
+    })
 })
 
 export function SignupComponent() {
@@ -40,7 +48,7 @@ export function SignupComponent() {
     const form = useForm<z.infer<typeof SignupFormSchema>>({
         resolver: zodResolver(SignupFormSchema),
         defaultValues: {
-            username: "",
+            fullname: "",
             email: "",
             password: "",
         },
@@ -58,27 +66,38 @@ export function SignupComponent() {
     }
 
     return (
-        <div className="relative w-[400px]">
-            <span className="block absolute bg-transparent border-[3px] border-black/30 size-5 top-0 left-0 border-b-0 border-r-0"></span>
-            <span className="block absolute bg-transparent border-[3px] border-black/30 size-5 top-0 right-0 border-b-0 border-l-0"></span>
-            <span className="block absolute bg-transparent border-[3px] border-black/30 size-5 bottom-0 left-0 border-t-0 border-r-0"></span>
-            <span className="block  absolute bg-transparent border-[3px] border-black/30 size-5 bottom-0 right-0 border-t-0 border-l-0"></span>
-            <Card className="rounded-none ring-0 border-2 border-gray-200">
-                <CardHeader>
-                    <h2 className="text-2xl font-bold">Sign Up</h2>
-                    <p className="text-sm text-muted-foreground">Create an account to get started.</p>
+        <div className="relative w-[540px]">
+            <Card className="rounded-md ring-0 shadow-none outline-0 border-0 bg-white text-font1">
+                <CardHeader className="text-center">
+                    <TitleText variant="heading2" className="font-semibold text-2xl">Create your account</TitleText>
+                    <BodyText variant="body3">Experience the power of AI-driven transcripts</BodyText>
                 </CardHeader>
                 <CardContent>
+
+
                     <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 overflow-hidden">
+
+                            <div className="flex items-center justify-center mb-2 w-full py-3 rounded-sm border-font3/10 border-1 cursor-pointer">
+                                <Image alt="google logo" src={'./assets/images/icons/google.svg'}
+                                    width={20} height={20} className="inline-block mr-2" ></Image>
+                                <TitleText variant="medium3" className="text-md"> Sign in with Google</TitleText>
+                            </div>
+
+                            <div className="flex items-center justify-center gap-4 mb-2 py-2 overflow-hidden">
+                                <Separator className=" bg-font4/20 " />
+                                <BodyText variant="body3" className="font-medium text-font3"> OR</BodyText>
+                                <Separator className=" bg-font4/20 " />
+                            </div>
+
                             <FormField
                                 control={form.control}
-                                name="username"
+                                name="fullname"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Username</FormLabel>
+                                        <FormLabel className="font-normal text-font3 text-sm">Full Name</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="johndoe" {...field} />
+                                            <Input placeholder="Ahmad Yaar" type="fullname" {...field} />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -89,7 +108,7 @@ export function SignupComponent() {
                                 name="email"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Email</FormLabel>
+                                        <FormLabel className="font-normal text-font3">Email</FormLabel>
                                         <FormControl>
                                             <Input placeholder="john@example.com" type="email" {...field} />
                                         </FormControl>
@@ -102,7 +121,20 @@ export function SignupComponent() {
                                 name="password"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Password</FormLabel>
+                                        <FormLabel className="font-normal text-font3">Password</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="••••••••" type="password" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="confirmPassword"
+                                render={({ field }) => (
+                                    <FormItem className="font-normal text-font3">
+                                        <FormLabel className="font-normal text-font3">Confirm Password</FormLabel>
                                         <FormControl>
                                             <Input placeholder="••••••••" type="password" {...field} />
                                         </FormControl>
@@ -113,19 +145,33 @@ export function SignupComponent() {
 
                             <Button
                                 onClick={e => e.stopPropagation()}
-                                className="cursor-pointer"
+                                className="h-12 cursor-pointer w-full py-3  mt-2 mb-0 text-base font-semibold text-white bg-primary-blue rounded-sm hover:bg-primary-blue/80 focus:outline-none focus:ring-2 focus:ring-primary-blue/50 focus:ring-offset-2 focus:ring-offset-gray-100"
                                 type="submit"
-                                variant={"default"}
-                            >Sign Up</Button>
 
-                            <div className="text-sm font-medium text-gray-500">
-                                Already have an account? <Link href="/sign-in" className="text-blue-700 hover:underline">Sign in</Link>
+                                variant={"default"}
+                            >
+                                <BodyText className="m-0" variant="body3">Register Now</BodyText>
+
+                            </Button>
+
+                            <div className="mt-2">
+                                <div className="flex items-center gap-2">
+                                    <Checkbox className="cursor-pointer"></Checkbox>
+                                   
+                                    <BodyText variant="body4">
+                                        I accept the
+                                        <span className="text-primary-blue hover:underline ml-2 font-medium">Terms and Conditions</span>
+                                    </BodyText>
+                                </div>
+                                <BodyText variant="body4" className="text-center text-font3 mt-3 font-medium">
+                                    Don't have an account yet? <Link href="/sign-in" className="text-primary-blue hover:underline"> Sign In</Link>
+                                </BodyText>
                             </div>
 
                         </form>
                     </Form>
                 </CardContent>
             </Card>
-        </div>
+        </div >
     )
 }

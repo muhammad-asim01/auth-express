@@ -33,39 +33,40 @@ export function QrCodeModal() {
             setLoading(false)
 
         }
+    }
+
+    const handleEnable2FA = async () => {
 
     }
+
     return (
-        <AlertDialog>
-            <AlertDialogTrigger asChild>
-                <Button variant="outline" className="cursor-pointer"
-                    onClick={handleQrCode}
-                >Show Qr Code</Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-                <AlertDialogHeader>
-                    <AlertDialogTitle className="text-center">Scan the QR Code Now</AlertDialogTitle>
-                    <AlertDialogDescription className="mx-auto">
-                        {
-                            loading ? (
-                                <div className="flex justify-center items-center ">
-                                    laoding...
-                                </div>
-                            ) :
-                                <Image
-                                    src={qrCodeUrl || "/images/qr-code.png"}
-                                    alt=""
-                                    width={150}
-                                    height={150}
-                                ></Image>
-                        }
-                    </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction>Next</AlertDialogAction>
-                </AlertDialogFooter>
-            </AlertDialogContent>
-        </AlertDialog>
+        <div>
+
+            <Button onClick={handleQrCode}
+                variant={"outline"}
+            >Enable Qr Code</Button>
+
+            <div>
+                <p className="text-center">Scan the QR Code Now</p>
+            </div>
+            <div className="mx-auto">
+                {
+                    loading ? (
+                        <div className="flex justify-center items-center ">
+                            laoding...
+                        </div>
+                    ) :
+                        <Image
+                            src={qrCodeUrl || "/images/qr-code.png"}
+                            alt=""
+                            width={150}
+                            height={150}
+                        ></Image>
+                }
+            </div>
+
+
+
+        </div >
     )
 }

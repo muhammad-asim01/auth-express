@@ -10,10 +10,11 @@ import crypto from 'crypto';
 import { authenticator } from 'otplib';
 import QRCode from 'qrcode';
 import { AuthRequest } from '../middleware/authMiddleware';
+import { clearCookies, setCookies } from '../utils/secureCookie';
 
 //  url: /api/v1/auth/signup
 export const register = asyncHandler(async (req: Request, res: Response) => {
-  const { email, username, password } = req.body;
+  const { email, fullname, password } = req.body;
 
   if (!EMAIL_REGEX.test(email)) {
     return sendResponse(res, 400, false, 'Invalid email format');
@@ -30,18 +31,18 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
 
   const newUser = await User.create({
     email,
-    username,
+    fullname,
     hashedPassword: password
   });
 
   return sendResponse(res, 201, true, 'User registered successfully', {
     id: newUser._id,
     email: newUser.email,
-    username: newUser.username
+    fullname: newUser.fullname
   });
 });
 
-//  url: /api/v1/auth/signin
+// url: /api/v1/auth/signin
 export const login = asyncHandler(async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
@@ -55,25 +56,30 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
     return sendResponse(res, 401, false, 'Invalid credentials');
   }
 
-  // check if user is already logged in
-  if (user.refreshToken) {
-    return sendResponse(res, 201, true, 'User already logged in');
+  // Check if user has a refreshToken, and it's still valid
+  if (user.accessToken) {
+    try {
+      verifyToken(user.accessToken); // Throws if expired/invalid
+      return sendResponse(res, 201, true, 'User already logged in');
+    } catch (err) {
+      // Token invalid or expired — remove it
+      user.refreshToken = null;
+      user.accessToken = null;
+      await user.save();
+    }
   }
 
+  // Generate new tokens
   const payload = { userId: user._id, email: user.email };
   const accessToken = generateAccessToken(payload);
   const refreshToken = generateRefreshToken(payload);
 
+  // Store new refreshToken in DB
   user.refreshToken = refreshToken;
+  user.accessToken = accessToken;
   await user.save();
 
-  // You can optionally set the refresh token as a secure, HTTP-only cookie:
-  res.cookie('refreshToken', refreshToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-  });
+  setCookies(res, refreshToken);
 
   return sendResponse(res, 200, true, 'Login successful', { accessToken });
 });
@@ -87,13 +93,10 @@ export const logout = asyncHandler(async (req: AuthRequest, res: Response) => {
 
 
   user.refreshToken = null;
+
   await user.save();
 
-  res.clearCookie("refreshToken", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-  });
+  clearCookies(res);
 
   return sendResponse(res, 200, true, "Logout successful");
 });
@@ -101,6 +104,7 @@ export const logout = asyncHandler(async (req: AuthRequest, res: Response) => {
 // refrehed token 
 export const refreshToken = asyncHandler(async (req: Request, res: Response) => {
   const refreshToken = req.cookies.refreshToken;
+  console.log('Refresh token:', refreshToken);
   if (!refreshToken) return sendResponse(res, 401, false, 'No refresh token provided');
 
   const user = await User.findOne({ refreshToken });
@@ -177,13 +181,7 @@ export const resetPassword = asyncHandler(async (req: Request, res: Response) =>
 
 
 
-// Helper to hash backup codes
-const hashBackupCodes = async (codes: string[]) => {
-  const hashed = await Promise.all(
-    codes.map(async (code) => await bcrypt.hash(code, 12))
-  );
-  return hashed;
-};
+
 
 // url: /api/v1/auth/2fa/setup
 export const setup2FA = asyncHandler(async (req: AuthRequest, res: Response) => {
@@ -200,6 +198,44 @@ export const setup2FA = asyncHandler(async (req: AuthRequest, res: Response) => 
 
   return sendResponse(res, 200, true, '2FA QR code generated', { qrCodeUrl: qrCode });
 });
+
+
+// url: /api/v1/auth/2fa/request
+export const request2FA = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const user = await User.findById(req.user?.userId);
+  if (!user) return sendResponse(res, 404, false, 'User not found');
+
+  if (user.twoFactorEnabled) return sendResponse(res, 400, false, '2FA already enabled');
+
+  user.twoFactorRequestStatus = 'pending';
+  await user.save();
+
+  return sendResponse(res, 200, true, '2FA request submitted and pending admin approval.');
+});
+
+
+// url: /api/v1/auth/2fa-approve
+export const approve2FARequest = asyncHandler(async (req: Request, res: Response) => {
+  const user = await User.findById(req.params.userId);
+  console.log('User:', user);
+  if (!user || user.twoFactorRequestStatus !== 'pending') {
+    return sendResponse(res, 400, false, 'Invalid request or user not pending approval');
+  }
+
+  user.twoFactorRequestStatus = 'approved';
+  await user.save();
+
+  return sendResponse(res, 200, true, '2FA request approved');
+});
+
+// Helper to hash backup codes
+// const hashBackupCodes = async (codes: string[]) => {
+//   const hashed = await Promise.all(
+//     codes.map(async (code) => await bcrypt.hash(code, 12))
+//   );
+//   return hashed;
+// };
+
 
 // url: /api/v1/auth/2fa/verify
 // export const verify2FA = asyncHandler(async (req: Request, res: Response) => {
@@ -222,7 +258,27 @@ export const setup2FA = asyncHandler(async (req: AuthRequest, res: Response) => 
 // });
 
 // // url: /api/v1/auth/2fa/disable
-// export const disable2FA = asyncHandler(async (req: Request, res: Response) => {
+export const disable2FA = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const userId = req?.user?.userId;
+  const { token } = req.body;
+  const user = await User.findById(userId);
+  if (!user || !user.twoFactorSecret) return sendResponse(res, 404, false, '2FA not setup');
+
+  const isValid = authenticator.check(token, user.twoFactorSecret);
+  if (!isValid) return sendResponse(res, 400, false, 'Invalid 2FA token');
+
+  user.twoFactorSecret = undefined;
+  user.twoFactorEnabled = false;
+  user.backupCodes = [];
+
+  await user.save();
+  return sendResponse(res, 200, true, '2FA disabled successfully');
+});
+
+
+
+// // url: /api/v1/auth/2fa/enable
+// export const enable2FA = asyncHandler(async (req: Request, res: Response) => {
 //   const userId = req.user?.userId;
 //   const { token } = req.body;
 //   const user = await User.findById(userId);
@@ -238,6 +294,7 @@ export const setup2FA = asyncHandler(async (req: AuthRequest, res: Response) => 
 //   await user.save();
 //   return sendResponse(res, 200, true, '2FA disabled successfully');
 // });
+
 
 // // url: /api/v1/auth/2fa/reset
 // export const reset2FA = asyncHandler(async (req: Request, res: Response) => {

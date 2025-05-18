@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-// Define which routes are public (accessible without login)
-const publicPaths = ['/sign-in', '/sign-up']
+// ✅ Define which routes are public
+const publicPaths = ['/sign-in', '/sign-up', '/', '/forgot-password']
 
 export default function middleware(request: NextRequest) {
   const token = request.cookies.get('refreshToken')?.value
   const pathname = request.nextUrl.pathname
 
-  // Skip static and internal assets
+  // ✅ Skip static and internal assets
   if (
     pathname.startsWith('/_next') ||
     pathname.endsWith('.css') ||
@@ -23,12 +23,12 @@ export default function middleware(request: NextRequest) {
   const isPublic = publicPaths.includes(pathname)
   const isLoggedIn = Boolean(token)
 
-  // If logged in and trying to access public route (like sign-in), redirect to homepage
-  if (isLoggedIn && isPublic) {
+  // ✅ If logged in and trying to access public route (e.g., sign-in), redirect to home
+  if (isLoggedIn && isPublic && pathname !== '/') {
     return NextResponse.redirect(new URL('/', request.url))
   }
 
-  // If not logged in and trying to access a protected route (including home page)
+  // ✅ If not logged in and accessing a protected route (not in publicPaths)
   if (!isLoggedIn && !isPublic) {
     return NextResponse.redirect(new URL('/sign-in', request.url))
   }
@@ -36,6 +36,7 @@ export default function middleware(request: NextRequest) {
   return NextResponse.next()
 }
 
+// ✅ Middleware config to apply it only to relevant routes
 export const config = {
   matcher: [
     '/((?!api|_next/static|_next/image|favicon.ico).*)',

@@ -23,3 +23,8 @@ export const generateQrCode = async () => {
     return response;
 }
 
+export const refreshToken = async () => {
+    const response = await apiClient.get(URLS.AUTH.REFRESH_TOKEN);
+    return response;
+}
+
