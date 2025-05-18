@@ -2,6 +2,7 @@ import Image from 'next/image'
 import React from 'react'
 import { TitleText } from '../base/typography/TitleText'
 import { BodyText } from '../base/typography/BodyText'
+import AppLogo from '../base/AppLogo'
 
 const servicesFeature = [
     {
@@ -57,11 +58,7 @@ const partnerList = [
 function LeftSide() {
     return (
         <div className="flex flex-col gap-10 w-3/12 m-12 justify-between">
-            <div className="flex gap-2 items-center">
-                <Image src={'/assets/images/logo.svg'} width={30} height={30} alt="Notaking"></Image>
-                <TitleText variant="heading2" as="h1">Notaking</TitleText>
-            </div>
-
+            <AppLogo></AppLogo>
             <div className="flex flex-col gap-6">
                 {servicesFeature.map((item) => (
                     <div key={item.key} className="">

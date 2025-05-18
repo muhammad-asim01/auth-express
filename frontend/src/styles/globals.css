@@ -83,6 +83,7 @@
   --color-font3: #76808E;
   --color-font4: #A2ABB8;
 
+
   --color-element1: #DBDFE5;
   --color-element2: #FFFFFF;
   --color-element3: #F4F6F9;
@@ -96,18 +97,16 @@
   --color-primary-cyan: #7AC9E3;
   --color-primary-yellow: #F3AB13;
   --color-primary-red: #FF4C4F;
-
-  /* soft color */
+  --color-primary-dark-blue: #0F1B33;
+    /* soft color */
   --color-secondary-blue: #2E70F91F;
   --color-secondary-purple: #8B84E31F;
   --color-secondary-green: #0FAE731F;
   --color-secondary-cyan: #7AC9E31F;
   --color-secondary-yellow: #F9B9301F;
   --color-secondary-red: #FF4C4F1F;
-  
+
 }
-
-
 
 .dark {
   --background: oklch(0.145 0 0);
@@ -142,14 +141,13 @@
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
 
-
-   /* custom theme  ********************************************************/
+  /* custom theme  ********************************************************/
   --color-font1: #F8F9FC;
   --color-font2: #B1B8C6;
   --color-font3: #828C9F;
   --color-font4: #596274;
 
-  --color-element1:#324466;
+  --color-element1: #324466;
   --color-element2: #3E4656;
   --color-element3: #1B2A47;
   --color-element4: #8D97AB;
@@ -161,6 +159,7 @@
   --color-secondary-cyan: #7AC9E31F;
   --color-secondary-yellow: #F9B9301F;
   --color-secondary-red: #FF4C4F1F;
+    --color-primary-dark-blue: #0F1B33;
 
 }
 
@@ -168,13 +167,12 @@
   * {
     @apply border-border outline-ring/50 font-Inter selection:bg-secondary-cyan;
 
-    
   }
+
   body {
     @apply bg-background text-foreground;
   }
 }
-
 
 @layer components {
   .heading1 {
@@ -236,4 +234,33 @@
   .text-body4 {
     @apply text-[12px] leading-[18px] font-normal;
   }
+}
+
+/* ---break---*/
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+.custom-scrollbar {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 10+ */
+  overflow: auto;
+  border-radius: 10px;
+}
+
+/* Hide scrollbar for WebKit browsers */
+.custom-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Optional: still apply rounding to inner content if needed */
+.custom-scrollbar > * {
+  border-radius: inherit;
 }
