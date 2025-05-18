@@ -19,6 +19,7 @@ export const authenticateToken: RequestHandler = (req: AuthRequest, res, next) =
     sendResponse(res, 401, false, 'Access denied. No token provided.');
     const userId = req.user?.userId;
     if (userId) {
+      
       User.findById(userId)
         .then((user) => {
           if (user) {

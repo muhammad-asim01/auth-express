@@ -14,7 +14,7 @@ import { clearCookies, setCookies } from '../utils/secureCookie';
 
 //  url: /api/v1/auth/signup
 export const register = asyncHandler(async (req: Request, res: Response) => {
-  const { email, username, password } = req.body;
+  const { email, fullname, password } = req.body;
 
   if (!EMAIL_REGEX.test(email)) {
     return sendResponse(res, 400, false, 'Invalid email format');
@@ -31,14 +31,14 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
 
   const newUser = await User.create({
     email,
-    username,
+    fullname,
     hashedPassword: password
   });
 
   return sendResponse(res, 201, true, 'User registered successfully', {
     id: newUser._id,
     email: newUser.email,
-    username: newUser.username
+    fullname: newUser.fullname
   });
 });
 
@@ -104,6 +104,7 @@ export const logout = asyncHandler(async (req: AuthRequest, res: Response) => {
 // refrehed token 
 export const refreshToken = asyncHandler(async (req: Request, res: Response) => {
   const refreshToken = req.cookies.refreshToken;
+  console.log('Refresh token:', refreshToken);
   if (!refreshToken) return sendResponse(res, 401, false, 'No refresh token provided');
 
   const user = await User.findOne({ refreshToken });
@@ -180,13 +181,7 @@ export const resetPassword = asyncHandler(async (req: Request, res: Response) =>
 
 
 
-// Helper to hash backup codes
-const hashBackupCodes = async (codes: string[]) => {
-  const hashed = await Promise.all(
-    codes.map(async (code) => await bcrypt.hash(code, 12))
-  );
-  return hashed;
-};
+
 
 // url: /api/v1/auth/2fa/setup
 export const setup2FA = asyncHandler(async (req: AuthRequest, res: Response) => {
@@ -203,6 +198,44 @@ export const setup2FA = asyncHandler(async (req: AuthRequest, res: Response) => 
 
   return sendResponse(res, 200, true, '2FA QR code generated', { qrCodeUrl: qrCode });
 });
+
+
+// url: /api/v1/auth/2fa/request
+export const request2FA = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const user = await User.findById(req.user?.userId);
+  if (!user) return sendResponse(res, 404, false, 'User not found');
+
+  if (user.twoFactorEnabled) return sendResponse(res, 400, false, '2FA already enabled');
+
+  user.twoFactorRequestStatus = 'pending';
+  await user.save();
+
+  return sendResponse(res, 200, true, '2FA request submitted and pending admin approval.');
+});
+
+
+// url: /api/v1/auth/2fa-approve
+export const approve2FARequest = asyncHandler(async (req: Request, res: Response) => {
+  const user = await User.findById(req.params.userId);
+  console.log('User:', user);
+  if (!user || user.twoFactorRequestStatus !== 'pending') {
+    return sendResponse(res, 400, false, 'Invalid request or user not pending approval');
+  }
+
+  user.twoFactorRequestStatus = 'approved';
+  await user.save();
+
+  return sendResponse(res, 200, true, '2FA request approved');
+});
+
+// Helper to hash backup codes
+// const hashBackupCodes = async (codes: string[]) => {
+//   const hashed = await Promise.all(
+//     codes.map(async (code) => await bcrypt.hash(code, 12))
+//   );
+//   return hashed;
+// };
+
 
 // url: /api/v1/auth/2fa/verify
 // export const verify2FA = asyncHandler(async (req: Request, res: Response) => {
@@ -225,7 +258,27 @@ export const setup2FA = asyncHandler(async (req: AuthRequest, res: Response) => 
 // });
 
 // // url: /api/v1/auth/2fa/disable
-// export const disable2FA = asyncHandler(async (req: Request, res: Response) => {
+export const disable2FA = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const userId = req?.user?.userId;
+  const { token } = req.body;
+  const user = await User.findById(userId);
+  if (!user || !user.twoFactorSecret) return sendResponse(res, 404, false, '2FA not setup');
+
+  const isValid = authenticator.check(token, user.twoFactorSecret);
+  if (!isValid) return sendResponse(res, 400, false, 'Invalid 2FA token');
+
+  user.twoFactorSecret = undefined;
+  user.twoFactorEnabled = false;
+  user.backupCodes = [];
+
+  await user.save();
+  return sendResponse(res, 200, true, '2FA disabled successfully');
+});
+
+
+
+// // url: /api/v1/auth/2fa/enable
+// export const enable2FA = asyncHandler(async (req: Request, res: Response) => {
 //   const userId = req.user?.userId;
 //   const { token } = req.body;
 //   const user = await User.findById(userId);
@@ -241,6 +294,7 @@ export const setup2FA = asyncHandler(async (req: AuthRequest, res: Response) => 
 //   await user.save();
 //   return sendResponse(res, 200, true, '2FA disabled successfully');
 // });
+
 
 // // url: /api/v1/auth/2fa/reset
 // export const reset2FA = asyncHandler(async (req: Request, res: Response) => {

@@ -17,7 +17,7 @@ export class ApiClient {
     private client: AxiosInstance;
     private isRefreshing = false;
     private refreshSubscribers: ((token: string) => void)[] = [];
-    
+
 
     constructor(baseURL: string, config?: AxiosRequestConfig) {
         this.client = axios.create({
@@ -26,6 +26,18 @@ export class ApiClient {
             withCredentials: true,
             ...config,
         });
+
+        // this.client.interceptors.response.use(
+        //     (response) => response,
+        //     (error) => {
+        //         const res = error.response;
+        //         if (res?.data?.data.clearLocalStorage) {
+        //             console.log('Clearing localStorage as instructed by server...');
+        //             localStorage.clear(); // ✅ clear all localStorage
+        //         }
+        //         return Promise.reject(error);
+        //     }
+        // );
 
         this.client.interceptors.request.use(
             (config: InternalAxiosRequestConfig) => {
@@ -38,7 +50,6 @@ export class ApiClient {
                         config.headers.Authorization = `Bearer ${token}`;
                     }
                 } else {
-                    // Remove any existing Authorization header if not required
                     if (config.headers?.Authorization) {
                         delete config.headers.Authorization;
                     }
@@ -55,8 +66,6 @@ export class ApiClient {
                 const originalRequest = error.config as ExtendedRequestConfig;
                 const status = error.response?.status;
                 const message = error.response?.data?.message;
-                console.log("Error response:", error.response);
-                console.log("Error message:", message);
 
                 const isTokenExpired =
                     (status === 401 || status === 403) &&
@@ -90,9 +99,9 @@ export class ApiClient {
                             } as ExtendedRequestConfig
                         );
 
-                        console.log("Refresh response:", refreshResponse);
+
                         if (refreshResponse.status !== 200) {
-                            console.log('')
+
                             return
                         }
 

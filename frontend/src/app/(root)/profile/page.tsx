@@ -1,12 +1,12 @@
 import React from 'react'
 import { QrCodeModal } from '@/components/2fa/QrCodeModal'
 
-function page() {
+function ProfilePage() {
   return (
     <div>
-      Homepage
+      <QrCodeModal />
     </div>
   )
 }
 
-export default page
+export default ProfilePage

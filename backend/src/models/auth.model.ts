@@ -2,7 +2,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IUser extends Document {
     email: string;
-    username: string;
+    fullname: string;
     hashedPassword: string;
     accessToken?: string | null;
     refreshToken?: string | null;
@@ -11,6 +11,8 @@ export interface IUser extends Document {
     twoFactorEnabled: boolean;
     twoFactorSecret?: string;
     backupCodes: string[];
+    twoFactorRequestStatus: 'none' | 'pending' | 'approved';
+    role: 'user' | 'admin';
 }
 
 const UserSchema: Schema<IUser> = new Schema<IUser>(
@@ -23,7 +25,7 @@ const UserSchema: Schema<IUser> = new Schema<IUser>(
             trim: true,
             match: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
         },
-        username: {
+        fullname: {
             type: String,
             required: true,
             unique: true,
@@ -62,6 +64,12 @@ const UserSchema: Schema<IUser> = new Schema<IUser>(
         backupCodes: {
             type: [String],
             default: [],
+        },
+        twoFactorRequestStatus: { type: String, enum: ['none', 'pending', 'approved'], default: 'none' },
+        role: {
+            type: String,
+            enum: ['user', 'admin'],
+            default: 'user',
         },
     },
     {
