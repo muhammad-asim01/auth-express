@@ -25,6 +25,7 @@ import { Separator } from "../ui/separator"
 import { TitleText } from "../base/typography/TitleText"
 import Image from "next/image"
 import { Checkbox } from "../ui/checkbox"
+import { GlobalButton } from "../base/GlobalButton"
 
 
 export const SignupFormSchema = z.object({
@@ -143,21 +144,18 @@ export function SignupComponent() {
                                 )}
                             />
 
-                            <Button
-                                onClick={e => e.stopPropagation()}
-                                className="h-12 cursor-pointer w-full py-3  mt-2 mb-0 text-base font-semibold text-white bg-primary-blue rounded-sm hover:bg-primary-blue/80 focus:outline-none focus:ring-2 focus:ring-primary-blue/50 focus:ring-offset-2 focus:ring-offset-gray-100"
+                            <GlobalButton
+                                className="w-full"
                                 type="submit"
-
-                                variant={"default"}
                             >
                                 <BodyText className="m-0" variant="body3">Register Now</BodyText>
-
-                            </Button>
+                            </GlobalButton>
+                         
 
                             <div className="mt-2">
                                 <div className="flex items-center gap-2">
                                     <Checkbox className="cursor-pointer"></Checkbox>
-                                   
+
                                     <BodyText variant="body4">
                                         I accept the
                                         <span className="text-primary-blue hover:underline ml-2 font-medium">Terms and Conditions</span>

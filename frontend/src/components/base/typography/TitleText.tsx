@@ -28,5 +28,5 @@ export const TitleText: React.FC<TextProps> = ({
     children,
 }) => {
     const Component = as;
-    return <Component className={clsx(variant, className)}>{children}</Component>;
+    return <Component className={clsx(variant, className)} >{children}</Component>;
 };

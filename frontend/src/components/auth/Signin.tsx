@@ -26,6 +26,7 @@ import { TitleText } from "../base/typography/TitleText"
 import { BodyText } from "../base/typography/BodyText"
 import Image from "next/image"
 import { Checkbox } from "../ui/checkbox"
+import { GlobalButton } from "../base/GlobalButton"
 
 export const SignInFormSchema = z.object({
 
@@ -118,16 +119,13 @@ export function SignInComponent() {
                                 )}
                             />
 
-                            <Button
-                                onClick={e => e.stopPropagation()}
-                                className="h-12 cursor-pointer w-full py-3 mt-2  text-base font-semibold text-white bg-primary-blue rounded-sm hover:bg-primary-blue/80 focus:outline-none focus:ring-2 focus:ring-primary-blue/50 focus:ring-offset-2 focus:ring-offset-gray-100"
+                            
+                            <GlobalButton
+                                className="w-full"
                                 type="submit"
-
-                                variant={"default"}
                             >
-                                <BodyText className="" variant="body3">SignIn</BodyText>
-
-                            </Button>
+                                <BodyText className="" variant="body3">Sign In</BodyText>
+                            </GlobalButton>
 
                             <div className="mt-2">
                                 <div className="flex items-center justify-between">

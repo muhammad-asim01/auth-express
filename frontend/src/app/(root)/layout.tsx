@@ -7,17 +7,37 @@ export const metadata: Metadata = {
 };
 
 import Header from "@/components/base/Header";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/Sidebar";
+import { AppSidebar } from "@/components/base/AppSidebar";
+import { cookies } from "next/headers";
 
-export default function RootLayout({
+
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies()
+  const defaultOpen = cookieStore.get("sidebar_state")?.value === "true"
+  const SIDEBAR_WIDTH = "16rem"
+  const SIDEBAR_WIDTH_MOBILE = "18rem"
+
   return (
-    <main>
-      <Header></Header>
-      {children}
-    </main >
+    <SidebarProvider defaultOpen={defaultOpen}
+      style={{
+        "--sidebar-width": SIDEBAR_WIDTH,
+        "--sidebar-width-mobile": SIDEBAR_WIDTH_MOBILE,
+      }}
+    >
+      <AppSidebar/>
+      <main className="w-full min-h-screen p-2 bg-primary-dark-blue">
+        <div className="bg-white rounded-md h-full relative">
+          <SidebarTrigger  className="absolute top-2 left-2 text-font1"/>
+          {children}
+        </div>
+      </main >
+    </SidebarProvider>
 
   );
 }
