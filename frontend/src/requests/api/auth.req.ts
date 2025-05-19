@@ -18,6 +18,23 @@ export const logOut = async () => {
     return response;
 }
 
+export const forgetPassword = async (data: { email: string }) => {
+    const response = await apiClient.post(URLS.AUTH.FORGOT_PASSWORD, data);
+    return response;
+}
+
+export const resetPassword = async (
+    token: string,
+    data: { newPassword: string }
+) => {
+    const response = await apiClient.post(
+        URLS.AUTH.RESET_PASSWORD + encodeURIComponent(token),
+        data
+    );
+    return response;
+};
+
+
 export const generateQrCode = async () => {
     const response = await apiClient.get(URLS.AUTH.SETUP_2FA);
     return response;

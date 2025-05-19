@@ -22,7 +22,7 @@ authRouter.post('/logout', authenticateToken,logout);
 authRouter.post('/forget-password', forgetPassword);
 
 //  url: /api/v1/auth/reset-password
-authRouter.post('/reset-password/:token', resetPassword);
+authRouter.post('/reset-password', resetPassword);
 
 // url:/api/v1/auth/setup-2fa
 authRouter.get('/setup-2fa', authenticateToken, setup2FA);

@@ -26,6 +26,7 @@ import { TitleText } from "../base/typography/TitleText"
 import Image from "next/image"
 import { Checkbox } from "../ui/checkbox"
 import { GlobalButton } from "../base/GlobalButton"
+import { EMAIL_REGEX, PASSWORD_REGEX } from "@/config"
 
 
 export const SignupFormSchema = z.object({
@@ -34,13 +35,21 @@ export const SignupFormSchema = z.object({
     }),
     email: z.string().email({
         message: "Please enter a valid email address.",
+    }).regex(EMAIL_REGEX, {
+        message: 'Invalid email format'
     }),
     password: z.string().min(8, {
         message: "Password must be at least 8 characters.",
+    }).regex(PASSWORD_REGEX, {
+        message:
+            "Password must include uppercase, lowercase, number, and special character.",
     }),
     confirmPassword: z.string().min(8, {
         message: "Password must be at least 8 characters.",
-    })
+    }).regex(PASSWORD_REGEX, {
+        message:
+            "Password must include uppercase, lowercase, number, and special character.",
+    }),
 })
 
 export function SignupComponent() {
@@ -48,6 +57,7 @@ export function SignupComponent() {
     const [open, setOpen] = useState(false);
     const form = useForm<z.infer<typeof SignupFormSchema>>({
         resolver: zodResolver(SignupFormSchema),
+        mode: 'onChange',
         defaultValues: {
             fullname: "",
             email: "",
@@ -124,7 +134,7 @@ export function SignupComponent() {
                                     <FormItem>
                                         <FormLabel className="font-normal text-font3">Password</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="••••••••" type="password" {...field} />
+                                            <Input placeholder="••••••••" type="text" {...field} />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -150,7 +160,7 @@ export function SignupComponent() {
                             >
                                 <BodyText className="m-0" variant="body3">Register Now</BodyText>
                             </GlobalButton>
-                         
+
 
                             <div className="mt-2">
                                 <div className="flex items-center gap-2">

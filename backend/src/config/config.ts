@@ -9,6 +9,7 @@ interface IConfig {
     JWT_SECRET: string;
     JWT_REFRESH_SECRET: string;
     FRONTEND_URL: string;
+    RESEND_API_KEY:string
 }
 
 const CONFIG: IConfig = {
@@ -17,7 +18,8 @@ const CONFIG: IConfig = {
     MONGODB_URI: process.env.MONGODB_URI!,
     JWT_SECRET: process.env.JWT_SECRET!,
     JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET!,
-    FRONTEND_URL: process.env.FRONTEND_URL!
+    FRONTEND_URL: process.env.FRONTEND_URL!,
+    RESEND_API_KEY: process.env.RESEND_API_KEY!
 };
 
 export default CONFIG;
