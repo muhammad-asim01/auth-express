@@ -59,8 +59,8 @@ function UpcomingMeetings() {
                   <span className='text-font4'><Calendar className='size-4' /></span>
                   <BodyText
                     variant='body3'
-                     className='text-xs text-font4'
-                    >
+                    className='text-xs text-font4'
+                  >
                     {item.date}
                   </BodyText>
                 </div>
@@ -69,7 +69,7 @@ function UpcomingMeetings() {
                   <BodyText
                     variant='body3'
                     className='text-xs text-font4'
-                    >
+                  >
                     {item.date}
                   </BodyText>
                 </div>

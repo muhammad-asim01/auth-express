@@ -1,19 +1,27 @@
 'use client'
-import { Calendar, Home, House, Inbox, NotebookPen, Plus, Search, Settings, UploadIcon } from "lucide-react"
+import { Calendar, CloudUpload, Home, House, Inbox, NotebookPen, Plus, Search, Settings, UploadIcon, Video } from "lucide-react"
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, } from "@/components/ui/Sidebar"
 import AppLogo from "./AppLogo"
 import Link from "next/link"
-import { TitleText } from "./typography/TitleText"
 import { BodyText } from "./typography/BodyText"
 import { usePathname } from "next/navigation"
 import clsx from "clsx"
-import path from "path"
+
 import { Separator } from "../ui/separator"
 import { GlobalButton } from "./GlobalButton"
-import Image from "next/image"
+
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
+import { DropDownDialog, DropDownItem } from "./DropDownDailog"
+import { LiveMeetingModal } from "./modals/LiveMeetingModal"
+import { useState } from "react"
+import { ScheduleMeetingModal } from "./modals/ScheduleMeetingModal"
 
 
+export enum ModalType {
+    LiveMeeting = "live-meeting",
+    ScheduleMeeting = "schedule-meeting",
+    AudioVideo = "audio-video",
+}
 
 // Menu items.
 const MenuItemsList = {
@@ -65,24 +73,67 @@ const MenuItemsList = {
     ],
 }
 
+
 export function AppSidebar() {
     const pathname = usePathname()
+    const [openModal, setOpenModal] = useState<ModalType | null>(null)
+
+
+    const menuItems: DropDownItem[] = [
+        {
+            label: "Add to live meeting",
+            icon: <Video strokeWidth={1.5} className="size-6 text-font1" />,
+            onClick: () => setOpenModal(ModalType.LiveMeeting),
+        },
+        {
+            label: "Schedule new meeting",
+            icon: <Calendar className="size-5 text-font1" />,
+            onClick: () => setOpenModal(ModalType.ScheduleMeeting)
+        },
+        {
+            label: "Upload audio or video",
+            icon: <CloudUpload className="size-5 text-font1" />,
+            onClick: () => setOpenModal(ModalType.AudioVideo),
+        },
+    ]
     return (
         <Sidebar className="p-3 bg-primary-dark-blue border-0" collapsible="icon"
-        side="left"
-        variant="inset"
+            side="left"
+            variant="inset"
         >
             <SidebarContent className="bg-primary-dark-blue border-0">
                 <SidebarGroup className="bg-transparent flex flex-col gap-6 h-full border-0">
                     <AppLogo></AppLogo>
                     <SidebarGroupContent className="flex flex-col gap-2">
+                        <DropDownDialog
+                            trigger={
+                                <GlobalButton className="my-2" iconLeft={<Plus className="size-6" />}>
+                                    <BodyText variant="body3">Create New</BodyText>
+                                </GlobalButton>
+                            }
+                            items={menuItems}
+                            align="start"
+                            sideOffset={12}
+                        />
 
-                        <GlobalButton
-                            className="my-2"
-                            iconLeft={<Plus className="size-6" />}
-                        >
-                            <BodyText className="" variant="body3">Create New</BodyText>
-                        </GlobalButton>
+                        {openModal === ModalType.LiveMeeting && (
+                            <LiveMeetingModal
+                                isOpen={true}
+                                onOpenChange={(open: any) => {
+                                    if (!open) setOpenModal(null)
+                                }}
+                            />
+                        )}
+
+
+                        {openModal === ModalType.ScheduleMeeting && <ScheduleMeetingModal
+                            isOpen={true}
+                            onOpenChange={(open: any) => {
+                                if (!open) setOpenModal(null)
+                            }}
+                        />}
+                        {/* {openModal === ModalType.AudioVideo && <AudioUploadDialog />} */}
+
                         <SidebarMenu className="flex gap-1">
                             {MenuItemsList?.topMenu?.map((item) => {
 
@@ -152,6 +203,7 @@ export function AppSidebar() {
 
                     </SidebarFooter>
                 </SidebarGroup>
+
             </SidebarContent>
         </Sidebar>
     )
