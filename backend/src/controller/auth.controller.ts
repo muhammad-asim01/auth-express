@@ -11,6 +11,8 @@ import { authenticator } from 'otplib';
 import QRCode from 'qrcode';
 import { AuthRequest } from '../middleware/authMiddleware';
 import { clearCookies, setCookies } from '../utils/secureCookie';
+import { sendEmail } from '../utils/emailSend';
+import CONFIG from '../config/config';
 
 //  url: /api/v1/auth/signup
 export const register = asyncHandler(async (req: Request, res: Response) => {
@@ -28,6 +30,7 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
   if (existingUser) {
     return sendResponse(res, 400, false, 'User already exists');
   }
+
 
   const newUser = await User.create({
     email,
@@ -93,6 +96,7 @@ export const logout = asyncHandler(async (req: AuthRequest, res: Response) => {
 
 
   user.refreshToken = null;
+  user.accessToken = null
 
   await user.save();
 
@@ -123,32 +127,79 @@ export const refreshToken = asyncHandler(async (req: Request, res: Response) => 
 
 
 // url: /api/v1/auth/forget-password
-
 export const forgetPassword = asyncHandler(async (req: Request, res: Response) => {
+
+
   const { email } = req.body;
+
+  // Find user by email
   const user = await User.findOne({ email });
 
+
   if (!user) {
-    return sendResponse(res, 404, false, 'Email not found');
+    // Respond success regardless of whether user exists
+    return sendResponse(
+      res,
+      200,
+      true,
+      'user not exist with this email you have trying'
+    );
   }
 
-  const token = crypto.randomBytes(32).toString('hex');
-  const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+  // Generate token
+  const rawToken = crypto.randomBytes(32).toString('hex');
+  const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
 
   user.resetPasswordToken = hashedToken;
-  user.resetPasswordExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
+  user.resetPasswordExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
   await user.save();
 
-  const resetToken = token;
+  // Construct reset URL
+  const resetUrl = `${CONFIG.FRONTEND_URL}/reset-password?token=${rawToken}`;
 
+  const emailHtml = `
+    <p>You requested a password reset.</p>
+    <p>Click the link below to reset your password. This link expires in 10 minutes.</p>
+    <p><a href="${resetUrl}">${resetUrl}</a></p>
+    <p>If you did not request this, please ignore this email.</p>
+  `;
 
-  return sendResponse(res, 200, true, 'Password reset link sent to email', { resetToken });
+  try {
+    const result = await sendEmail({
+      to: user.email,
+      subject: 'Password Reset Request',
+      html: emailHtml,
+    });
+
+    if (!result.success) {
+      console.error('Failed to send reset email:', result.error);
+    }
+  } catch (error) {
+    console.error('Unexpected error sending reset email:', error);
+  }
+
+  return sendResponse(
+    res,
+    200,
+    true,
+    'If that email exists, a password reset link has been sent'
+  );
 });
 
 // url: /api/v1/auth/reset-password/:token
 export const resetPassword = asyncHandler(async (req: Request, res: Response) => {
-  const { token } = req.params;
+  const { token } = req.query;
   const { newPassword } = req.body;
+
+  console.log(req.body)
+
+  if (!token || typeof token !== 'string') {
+    return sendResponse(res, 400, false, 'Missing or invalid token');
+  }
+
+  if (!PASSWORD_REGEX.test(newPassword)) {
+    return sendResponse(res, 400, false, 'Password must include uppercase, lowercase, number, special character, and be at least 8 characters long');
+  }
 
   const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
 
@@ -161,9 +212,7 @@ export const resetPassword = asyncHandler(async (req: Request, res: Response) =>
     return sendResponse(res, 400, false, 'Invalid or expired reset token');
   }
 
-  if (!PASSWORD_REGEX.test(newPassword)) {
-    return sendResponse(res, 400, false, 'Password must include uppercase, lowercase, number, special character, and be at least 8 characters long');
-  }
+
 
   const isPasswordSame = await bcrypt.compare(newPassword, user.hashedPassword);
   if (isPasswordSame) {
@@ -178,9 +227,6 @@ export const resetPassword = asyncHandler(async (req: Request, res: Response) =>
 
   return sendResponse(res, 200, true, 'Password reset successful');
 });
-
-
-
 
 
 // url: /api/v1/auth/2fa/setup
@@ -217,7 +263,6 @@ export const request2FA = asyncHandler(async (req: AuthRequest, res: Response) =
 // url: /api/v1/auth/2fa-approve
 export const approve2FARequest = asyncHandler(async (req: Request, res: Response) => {
   const user = await User.findById(req.params.userId);
-  console.log('User:', user);
   if (!user || user.twoFactorRequestStatus !== 'pending') {
     return sendResponse(res, 400, false, 'Invalid request or user not pending approval');
   }

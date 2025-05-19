@@ -27,16 +27,22 @@ import { BodyText } from "../base/typography/BodyText"
 import Image from "next/image"
 import { Checkbox } from "../ui/checkbox"
 import { GlobalButton } from "../base/GlobalButton"
+import { EMAIL_REGEX, PASSWORD_REGEX } from "@/config"
 
 export const SignInFormSchema = z.object({
-
     email: z.string().email({
         message: "Please enter a valid email address.",
+    }).regex(EMAIL_REGEX, {
+        message: 'Invalid email format'
     }),
-    password: z.string().min(8, {
-        message: "Password must be at least 8 characters.",
-    }),
-})
+
+    password: z
+        .string()
+        .min(8, { message: "Password must be at least 8 characters." })
+        .refine((val) => PASSWORD_REGEX.test(val), {
+            message: "Password must include uppercase, lowercase, number, and special character.",
+        })
+});
 
 export function SignInComponent() {
     const router = useRouter()
@@ -44,11 +50,12 @@ export function SignInComponent() {
 
     const form = useForm<z.infer<typeof SignInFormSchema>>({
         resolver: zodResolver(SignInFormSchema),
+        mode: "onChange", // to trigger validation immediately
         defaultValues: {
             email: "",
             password: "",
         },
-    })
+    });
 
     async function onSubmit(data: z.infer<typeof SignInFormSchema>) {
         const response = await signIn(data);
@@ -112,14 +119,14 @@ export function SignInComponent() {
                                     <FormItem>
                                         <FormLabel>Password</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="••••••••" type="password" {...field} />
+                                            <Input placeholder="••••••••" type="text" {...field} />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}
                             />
 
-                            
+
                             <GlobalButton
                                 className="w-full"
                                 type="submit"

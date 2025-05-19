@@ -1,10 +1,11 @@
-"use client"
 
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import { z } from "zod"
 
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader } from "../ui/card"
+import Link from "next/link"
+import { BodyText } from "../base/typography/BodyText"
+import { TitleText } from "../base/typography/TitleText"
+
 import {
     Form,
     FormControl,
@@ -13,38 +14,45 @@ import {
     FormLabel,
     FormMessage,
 } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
+import { z } from "zod"
+import { Input } from "../ui/input"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { resetPassword } from "@/requests/api/auth.req"
 import { toast } from "sonner"
-import { forgetPassword } from "@/requests/api/auth.req"
-import { Card, CardContent, CardHeader } from "../ui/card"
-import Link from "next/link"
+import { PASSWORD_REGEX } from "@/config"
 import { useRouter } from "next/navigation"
-import { BodyText } from "../base/typography/BodyText"
-
-import { TitleText } from "../base/typography/TitleText"
 
 
+export const ResetLinkFormSchema = z.object({
+    newPassword: z
+        .string()
+        .min(8, { message: "Password must be at least 8 characters." })
+        .regex(PASSWORD_REGEX, {
+            message:
+                "Password must include uppercase, lowercase, number, and special character.",
+        }),
+});
 
-export const forgetPasswordSchema = z.object({
-    email: z.string().email({
-        message: "Please enter a valid email address.",
-    }),
-})
-
-export function ForgetPassword() {
+export function ResetPassword({ token }: { token: string }) {
     const router = useRouter()
-    const form = useForm<z.infer<typeof forgetPasswordSchema>>({
-        resolver: zodResolver(forgetPasswordSchema),
+    const form = useForm<z.infer<typeof ResetLinkFormSchema>>({
+        resolver: zodResolver(ResetLinkFormSchema),
         defaultValues: {
-            email: "",
+            newPassword: "",
         },
     })
 
-    async function onSubmit(data: z.infer<typeof forgetPasswordSchema>) {
-        const response = await forgetPassword(data);
+    async function onSubmit(data: z.infer<typeof ResetLinkFormSchema>) {
+        const response = await resetPassword(token, data);
         if (response.success) {
-            toast.success("Reset Passwork Link Generated", {
-                description: "Please check your email to reset the password.",
+            toast.success(response.message, {
+                description: response.message,
+            })
+            router.push('/sign-in')
+        } if (response.error) {
+            toast.error(response.message, {
+                description: response.message,
             })
         }
     }
@@ -53,20 +61,20 @@ export function ForgetPassword() {
         <div className="relative w-[540px]">
             <Card className="rounded-md ring-0 shadow-none outline-0 border-0 bg-white text-font1">
                 <CardHeader className="text-center mb-3 flex flex-col gap-4 items-center">
-                    <TitleText variant="heading2">Forget Password</TitleText>
-                    <BodyText variant="body3">Enter the email address you used when you joined and we'll send you instructions to reset your password.</BodyText>
+                    <TitleText variant="heading2">Reset Password</TitleText>
+                    <BodyText variant="body3">Click on the button to reset the password</BodyText>
                 </CardHeader>
                 <CardContent>
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 overflow-hidden">
                             <FormField
                                 control={form.control}
-                                name="email"
+                                name="newPassword"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="font-normal text-font3">Email</FormLabel>
+                                        <FormLabel className="font-normal text-font3">New Password</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="john@example.com" type="email" {...field} />
+                                            <Input placeholder="type new password here" type="text" {...field} />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -79,7 +87,7 @@ export function ForgetPassword() {
 
                                 variant={"default"}
                             >
-                                <BodyText className="m-0" variant="body3">Send reset instruction</BodyText>
+                                <BodyText className="m-0" variant="body3">Reset Now</BodyText>
 
                             </Button>
                             <BodyText variant="body3" className="text-center text-font3 font-medium mt-6">

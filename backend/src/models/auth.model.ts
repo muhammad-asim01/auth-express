@@ -27,7 +27,6 @@ const UserSchema: Schema<IUser> = new Schema<IUser>(
         },
         fullname: {
             type: String,
-            required: true,
             unique: true,
             trim: true,
             minlength: 3,
@@ -86,6 +85,6 @@ UserSchema.pre<IUser>('save', async function (next) {
     next();
 });
 
-UserSchema.index({ email: 1, username: 1 });
+UserSchema.index({ email: 1, fullname: 1 });
 
 export const User = mongoose.model<IUser>('User', UserSchema);
